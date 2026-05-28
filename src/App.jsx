@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { initialData } from './data';
-import { Sun, Moon, RotateCcw, ChevronDown } from 'lucide-react';
+import { Sun, Moon, RotateCcw, ChevronDown, Cat } from 'lucide-react';
 import './index.css';
 
 function App() {
@@ -78,7 +78,9 @@ function App() {
           <div className="header-top">
             <div>
               <div className="header-subtitle font-mono">Nhật ký móc len</div>
-              <h1 className="header-title font-serif">😻 Đĩa Tai Mèo</h1>
+              <h1 className="header-title font-serif">
+                <Cat size={36} color="var(--text-accent)" strokeWidth={2.5} /> Đĩa Tai Mèo
+              </h1>
             </div>
             <div className="header-actions">
               <button className="btn-header" onClick={resetAll} title="Reset">
