@@ -2,12 +2,11 @@ import { supabase, getDeviceId } from './supabase';
 
 // ─── USER PROJECTS ──────────────────────────────────────────
 
-/** Lấy tất cả dự án tự tạo của thiết bị này */
+/** Lấy tất cả dự án tự tạo từ database (dành cho cả Admin và Viewer) */
 export async function fetchUserProjects() {
   const { data, error } = await supabase
     .from('user_projects')
     .select('*')
-    .eq('device_id', getDeviceId())
     .order('created_at', { ascending: true });
   if (error) { console.error('fetchUserProjects:', error); return []; }
   // Chuyển từ snake_case Supabase → camelCase app
@@ -22,13 +21,17 @@ export async function fetchUserProjects() {
   }));
 }
 
-/** Lưu (thêm mới hoặc cập nhật) một dự án */
-export async function upsertUserProject(project) {
+/** Lưu (thêm mới hoặc cập nhật) một dự án - Chỉ Admin được phép */
+export async function upsertUserProject(project, userId) {
+  if (!userId) {
+    console.error('Không có quyền: Chỉ Admin mới được phép lưu chart.');
+    return;
+  }
   const { error } = await supabase
     .from('user_projects')
     .upsert({
       id: project.id,
-      device_id: getDeviceId(),
+      device_id: userId,
       title: project.title,
       description: project.description || '',
       image: project.image || '',
@@ -39,17 +42,20 @@ export async function upsertUserProject(project) {
   if (error) console.error('upsertUserProject:', error);
 }
 
-/** Xoá một dự án */
-export async function deleteUserProject(projectId) {
+/** Xoá một dự án - Chỉ Admin được phép */
+export async function deleteUserProject(projectId, userId) {
+  if (!userId) {
+    console.error('Không có quyền: Chỉ Admin mới được phép xoá chart.');
+    return;
+  }
   const { error } = await supabase
     .from('user_projects')
     .delete()
-    .eq('id', projectId)
-    .eq('device_id', getDeviceId());
+    .eq('id', projectId);
   if (error) console.error('deleteUserProject:', error);
 }
 
-// ─── PROGRESS ───────────────────────────────────────────────
+// ─── PROGRESS (Lưu tiến độ cá nhân theo từng thiết bị) ──────────
 
 /** Lấy toàn bộ tiến độ của thiết bị này */
 export async function fetchProgress() {

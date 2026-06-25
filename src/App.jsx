@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { projects } from './data/projects';
 import { glossary } from './data/glossary';
 import { AddProjectModal } from './components/AddProjectModal';
+import { AuthModal } from './components/AuthModal';
+import { supabase } from './lib/supabase';
 import {
   fetchUserProjects, upsertUserProject, deleteUserProject,
   fetchProgress, upsertProgress, deleteProgress
@@ -18,6 +20,10 @@ function App() {
     return saved || null;
   });
 
+  // Admin Auth State
+  const [user, setUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   // User-created projects — load từ Supabase
   const [userProjects, setUserProjects] = useState([]);
   const [dbLoading, setDbLoading] = useState(true);
@@ -27,6 +33,19 @@ function App() {
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+
+  // Lắng nghe trạng thái đăng nhập từ Supabase
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Tải dữ liệu từ Supabase khi app khởi động
   useEffect(() => {
@@ -44,7 +63,7 @@ function App() {
   }, []);
 
   const handleSaveProject = async (projectData) => {
-    await upsertUserProject(projectData);
+    await upsertUserProject(projectData, user?.id);
     setUserProjects(prev => {
       const exists = prev.findIndex(p => p.id === projectData.id);
       if (exists >= 0) {
@@ -60,7 +79,7 @@ function App() {
 
   const handleDeleteProject = async (projectId) => {
     if (!window.confirm('Xoá mẫu này? Tiến độ cũng sẽ bị xoá.')) return;
-    await Promise.all([deleteUserProject(projectId), deleteProgress(projectId)]);
+    await Promise.all([deleteUserProject(projectId, user?.id), deleteProgress(projectId)]);
     setUserProjects(prev => prev.filter(p => p.id !== projectId));
     setProgress(prev => { const n = { ...prev }; delete n[projectId]; return n; });
   };
@@ -217,8 +236,8 @@ function App() {
                 }
               </div>
 
-              {/* Nút sửa/xóa chỉ hiện với dự án tự tạo */}
-              {isUser && (
+              {/* Nút sửa/xóa chỉ hiện với dự án tự tạo khi đã đăng nhập admin */}
+              {isUser && user && (
                 <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={(e) => openEditModal(e, project)}
@@ -264,19 +283,21 @@ function App() {
           );
         })}
 
-        {/* Card Thêm mới */}
-        <button
-          onClick={() => { setEditingProject(null); setShowAddModal(true); }}
-          className="pattern-card rounded-xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3 min-h-[280px] cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
-        >
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-            <span className="material-symbols-outlined text-primary text-[28px]">add</span>
-          </div>
-          <div className="text-center">
-            <p className="font-headline-sm text-headline-sm text-primary">Thêm mẫu mới</p>
-            <p className="font-body-sm text-body-sm text-on-surface-variant/60 mt-1">Tự tạo chart của bạn</p>
-          </div>
-        </button>
+        {/* Card Thêm mới - Chỉ hiện khi đã đăng nhập */}
+        {user && (
+          <button
+            onClick={() => { setEditingProject(null); setShowAddModal(true); }}
+            className="pattern-card rounded-xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3 min-h-[280px] cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
+          >
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+              <span className="material-symbols-outlined text-primary text-[28px]">add</span>
+            </div>
+            <div className="text-center">
+              <p className="font-headline-sm text-headline-sm text-primary">Thêm mẫu mới</p>
+              <p className="font-body-sm text-body-sm text-on-surface-variant/60 mt-1">Tự tạo chart của bạn</p>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -520,6 +541,13 @@ function App() {
         </div>
       )}
 
+      {/* Modal đăng nhập admin */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+        />
+      )}
+
       {/* Modal thêm/sửa project */}
       {showAddModal && (
         <AddProjectModal
@@ -537,7 +565,37 @@ function App() {
             {currentView === 'projects' ? 'Trang Chủ' : currentView === 'pattern' ? 'Chi tiết mẫu móc' : 'Thư viện Ký hiệu'}
           </span>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Nút đăng nhập/đăng xuất */}
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="hidden md:inline font-label-md text-label-md text-on-surface-variant bg-surface-variant/30 px-3 py-1.5 rounded-full border border-outline-variant/30 max-w-[180px] truncate">
+                {user.email}
+              </span>
+              <button 
+                onClick={async () => {
+                  if (window.confirm('Bạn muốn đăng xuất?')) {
+                    await supabase.auth.signOut();
+                  }
+                }} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-error/10 hover:bg-error/20 text-error transition-all font-label-md text-label-md cursor-pointer active:scale-95 duration-150"
+                title="Đăng xuất"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+                <span className="hidden md:inline">Đăng xuất</span>
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowAuthModal(true)} 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-all font-label-md text-label-md cursor-pointer active:scale-95 duration-150"
+              title="Đăng nhập Admin"
+            >
+              <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+              <span>Đăng nhập</span>
+            </button>
+          )}
+
           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-surface-variant/50 transition-colors active:scale-95 duration-150 text-primary">
             <span className="material-symbols-outlined">
               {theme === 'dark' ? 'light_mode' : 'dark_mode'}
@@ -552,8 +610,8 @@ function App() {
         {currentView === 'library' && renderLibraryView()}
       </main>
 
-      {/* Nút FAB thêm mẫu mới cố định ở góc dưới bên phải */}
-      {currentView === 'projects' && (
+      {/* Nút FAB thêm mẫu mới cố định ở góc dưới bên phải - Chỉ hiện khi đã đăng nhập */}
+      {user && currentView === 'projects' && (
         <button
           onClick={() => { setEditingProject(null); setShowAddModal(true); }}
           className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer"
