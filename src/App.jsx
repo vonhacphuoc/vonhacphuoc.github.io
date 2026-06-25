@@ -73,6 +73,7 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('crochet_currentView', currentView);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView]);
 
   useEffect(() => {
@@ -353,7 +354,7 @@ function App() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-16">
           {groupedData.map(group => (
-            <div key={group.id} className="pattern-card p-6 rounded-xl border border-outline-variant/30 flex flex-col h-[500px]">
+            <div key={group.id} className="pattern-card p-6 rounded-xl border border-outline-variant/30 flex flex-col max-h-80 md:h-[500px]">
               <div className="flex items-center gap-3 mb-6">
                 <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
                   {getGroupIcon(group.title)}

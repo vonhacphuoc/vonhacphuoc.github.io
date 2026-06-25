@@ -143,7 +143,7 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
           </div>
 
           {/* Ảnh URL + Icon cùng hàng */}
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="font-label-md text-label-md text-on-surface-variant block mb-1.5">URL ảnh bìa</label>
               <input
@@ -159,7 +159,7 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
               <select
                 value={icon}
                 onChange={e => setIcon(e.target.value)}
-                className="px-4 py-2.5 rounded-xl border border-outline-variant/50 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none transition-colors focus:border-primary cursor-pointer"
+                className="w-full px-4 py-2.5 rounded-xl border border-outline-variant/50 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none transition-colors focus:border-primary cursor-pointer"
               >
                 {ICON_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -188,8 +188,8 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
 
             {errors.rows && <p className="mb-2 font-label-sm text-label-sm text-error">{errors.rows}</p>}
 
-            {/* Table header */}
-            <div className="grid gap-2 mb-2 px-1" style={{ gridTemplateColumns: '1fr 80px 1fr 32px' }}>
+            {/* Table header - ẩn trên mobile */}
+            <div className="hidden md:grid gap-2 mb-2 px-1" style={{ gridTemplateColumns: '1fr 80px 1fr 32px' }}>
               <span className="font-label-sm text-label-sm text-on-surface-variant/60">Phần</span>
               <span className="font-label-sm text-label-sm text-on-surface-variant/60">Hàng</span>
               <span className="font-label-sm text-label-sm text-on-surface-variant/60">Công thức</span>
@@ -198,35 +198,74 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
 
             <div className="space-y-2">
               {rows.map((row, idx) => (
-                <div key={row._key} className="grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 80px 1fr 32px' }}>
-                  <input
-                    type="text"
-                    value={row.part}
-                    onChange={e => updateRow(row._key, 'part', e.target.value)}
-                    placeholder={idx === 0 ? 'VD: Thân' : ''}
-                    className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={row.row}
-                    onChange={e => updateRow(row._key, 'row', e.target.value)}
-                    placeholder="R1"
-                    className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
-                  />
-                  <input
-                    type="text"
-                    value={row.formula}
-                    onChange={e => updateRow(row._key, 'formula', e.target.value)}
-                    placeholder="VD: MR(6X)"
-                    className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
-                  />
-                  <button
-                    onClick={() => removeRow(row._key)}
-                    disabled={rows.length <= 1}
-                    className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-error/10 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">remove_circle</span>
-                  </button>
+                <div key={row._key}>
+                  {/* Mobile layout: 2 dòng */}
+                  <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-outline-variant/20 md:hidden bg-surface-container-lowest/40">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={row.part}
+                        onChange={e => updateRow(row._key, 'part', e.target.value)}
+                        placeholder={idx === 0 ? 'Phần (VD: Thân)' : 'Phần'}
+                        className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={row.row}
+                        onChange={e => updateRow(row._key, 'row', e.target.value)}
+                        placeholder="Hàng"
+                        className="w-20 flex-shrink-0 px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                      />
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={row.formula}
+                        onChange={e => updateRow(row._key, 'formula', e.target.value)}
+                        placeholder="Công thức (VD: MR(6X))"
+                        className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                      />
+                      <button
+                        onClick={() => removeRow(row._key)}
+                        disabled={rows.length <= 1}
+                        className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full hover:bg-error/10 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">remove_circle</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Desktop layout: 1 dòng ngang */}
+                  <div className="hidden md:grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 80px 1fr 32px' }}>
+                    <input
+                      type="text"
+                      value={row.part}
+                      onChange={e => updateRow(row._key, 'part', e.target.value)}
+                      placeholder={idx === 0 ? 'VD: Thân' : ''}
+                      className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={row.row}
+                      onChange={e => updateRow(row._key, 'row', e.target.value)}
+                      placeholder="R1"
+                      className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={row.formula}
+                      onChange={e => updateRow(row._key, 'formula', e.target.value)}
+                      placeholder="VD: MR(6X)"
+                      className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
+                    />
+                    <button
+                      onClick={() => removeRow(row._key)}
+                      disabled={rows.length <= 1}
+                      className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-error/10 text-on-surface-variant/50 hover:text-error transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">remove_circle</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
