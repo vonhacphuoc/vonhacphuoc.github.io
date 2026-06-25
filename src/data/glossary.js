@@ -1,0 +1,16 @@
+export const glossary = [
+  { symbol: 'MR', name: 'Vòng tròn ma thuật', instructions: ['Quấn sợi quanh 2 ngón tay tạo 1 vòng tròn.', 'Móc số mũi đơn (thường là 6X) vào trong vòng.', 'Kéo sợi đuôi siết chặt lại — xong vòng tròn kín ✨'] },
+  { symbol: 'CH', name: 'Mũi bính', instructions: ['Tạo nút thòng lọng trên kim (loop).', 'Quấn sợi 1 vòng quanh kim.', 'Kéo sợi qua vòng trên kim → được 1 mũi bính.'] },
+  { symbol: 'X/SC', name: 'Mũi đơn', instructions: ['Đâm kim vào mũi cần móc.', 'Kéo sợi ra → có 2 vòng trên kim.', 'Kéo sợi qua cả 2 vòng → xong 1 mũi đơn.'] },
+  { symbol: 'V', name: 'Mũi tăng (2X)', instructions: ['Móc 2 mũi đơn (X, X) vào cùng 1 chân (mũi) của hàng dưới.'] },
+  { symbol: 'W/3X', name: '3 mũi đơn 1 chân', instructions: ['Móc 3 mũi đơn (X, X, X) cùng vào 1 mũi gốc.'] },
+  { symbol: 'A', name: 'Mũi giảm', instructions: ['Đâm kim vào mũi thứ nhất, kéo sợi lên (2 vòng trên kim).', 'Đâm kim vào mũi thứ hai, kéo sợi lên (3 vòng trên kim).', 'Kéo sợi qua cả 3 vòng cùng lúc.'] },
+  { symbol: '3X -> 1X', name: 'Mũi giảm 3', instructions: ['Giống mũi giảm thường nhưng gộp 3 mũi liền kề thành 1 mũi → tạo điểm nhọn.'] },
+  { symbol: 'HDC', name: 'Mũi nửa kép', instructions: ['Quấn sợi 1 vòng quanh kim.', 'Đâm kim vào mũi kế tiếp.', 'Kéo sợi ra (trên kim có 3 vòng).', 'Kéo sợi qua cả 3 vòng cùng lúc.'] },
+  { symbol: 'DC', name: 'Mũi kép đơn', instructions: ['Quấn sợi 1 vòng quanh kim.', 'Đâm kim vào mũi kế tiếp.', 'Kéo sợi ra → có 3 vòng trên kim.', 'Kéo sợi qua 2 vòng → còn 2 vòng.', 'Kéo sợi qua 2 vòng cuối → xong 1 mũi kép.'] },
+  { symbol: 'TR', name: 'Mũi kép ba', instructions: ['Quấn sợi 2 vòng quanh kim.', 'Đâm kim vào mũi kế tiếp.', 'Kéo sợi ra → có 4 vòng trên kim.', 'Kéo sợi qua 2 vòng → còn 3.', 'Kéo sợi qua 2 vòng → còn 2.', 'Kéo sợi qua 2 vòng cuối → xong mũi kép ba.'] },
+  { symbol: 'FPDC', name: 'Mũi kép trước', instructions: ['Quấn sợi 1 vòng quanh kim.', 'Thay vì đâm kim vào mũi đầu hàng như bình thường, bạn đâm kim vòng ra phía trước cột mũi kép của hàng dưới.', 'Móc lên như mũi DC bình thường (qua 2 vòng, qua 2 vòng).'] },
+  { symbol: 'BLO', name: 'Móc len vòng sau', instructions: ['Chỉ móc vào vòng phía sau của mũi móc thay vì cả 2 vòng.'] },
+  { symbol: 'FLO', name: 'Móc len vòng trước', instructions: ['Chỉ móc vào vòng phía trước của mũi móc thay vì cả 2 vòng.'] },
+  { symbol: 'SL/ST', name: 'Mũi dời (Trượt)', instructions: ['Đâm kim vào mũi kế.', 'Đưa kim qua vòng, kéo sợi làm 1 mũi bính cố định.', 'Kéo sợi qua mũi và vòng trên kim cùng lúc.'] },
+];
