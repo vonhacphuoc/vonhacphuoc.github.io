@@ -28,7 +28,11 @@ function App() {
   const [userProjects, setUserProjects] = useState([]);
   const [dbLoading, setDbLoading] = useState(true);
 
-  const allProjects = useMemo(() => [...projects, ...userProjects], [userProjects]);
+  const allProjects = useMemo(() => {
+    const userProjectIds = new Set(userProjects.map(p => p.id));
+    const filteredStatic = projects.filter(p => !userProjectIds.has(p.id));
+    return [...filteredStatic, ...userProjects];
+  }, [userProjects]);
 
   // Modal state
   const [showAddModal, setShowAddModal] = useState(false);
