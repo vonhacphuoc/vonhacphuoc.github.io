@@ -72,6 +72,25 @@ function App() {
     });
   };
 
+  // State lưu trạng thái mở/đóng của các hàng range (R8-R14)
+  const [expandedRanges, setExpandedRanges] = useState({});
+
+  const toggleExpandRange = (itemId) => {
+    setExpandedRanges(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+  };
+
+  // Parse dạng "R8-R14" hoặc "H4-H150" → { prefix, start, end }
+  const parseRowRange = (rowStr) => {
+    if (!rowStr) return null;
+    const match = rowStr.match(/^([A-Za-z]+)(\d+)[\-–]([A-Za-z]*)?(\d+)$/);
+    if (!match) return null;
+    const prefix = match[1];
+    const start = parseInt(match[2]);
+    const end = parseInt(match[4]);
+    if (isNaN(start) || isNaN(end) || end <= start || end - start > 200) return null;
+    return { prefix, start, end };
+  };
+
   const resetAll = (projectId) => {
     if(window.confirm('Bạn có chắc chắn muốn reset toàn bộ tiến trình đánh dấu của mẫu này?')) {
       setProgress(prev => ({ ...prev, [projectId]: [] }));
@@ -246,6 +265,87 @@ function App() {
               <div className="flex-grow overflow-y-auto custom-scrollbar space-y-3 pr-2">
                 {group.items.map((item) => {
                   const isCompleted = (progress[activeProject.id] || []).includes(item.id);
+                  const range = parseRowRange(item.row);
+                  const isExpanded = expandedRanges[item.id];
+
+                  if (range) {
+                    // Tạo danh sách sub-rows
+                    const subRows = [];
+                    for (let i = range.start; i <= range.end; i++) {
+                      subRows.push({ id: `${item.id}_sub_${i}`, label: `${range.prefix}${i}` });
+                    }
+                    const completedSubs = subRows.filter(sr => (progress[activeProject.id] || []).includes(sr.id));
+                    const allSubsDone = completedSubs.length === subRows.length;
+                    const someDone = completedSubs.length > 0 && !allSubsDone;
+
+                    return (
+                      <div key={item.id} className="py-1">
+                        {/* Header row range */}
+                        <div className="flex items-start gap-4 group">
+                          <span
+                            className={`material-symbols-outlined mt-0.5 flex-shrink-0 text-[20px] transition-colors ${
+                              allSubsDone ? 'text-primary' : someDone ? 'text-primary/50' : 'text-outline-variant'
+                            }`}
+                            style={allSubsDone ? { fontVariationSettings: "'FILL' 1" } : {}}
+                          >
+                            {allSubsDone ? 'check_circle' : someDone ? 'indeterminate_check_box' : 'radio_button_unchecked'}
+                          </span>
+                          <div className="flex flex-col flex-grow">
+                            <span className={`font-body-md text-body-md transition-colors ${
+                              allSubsDone ? 'text-outline-variant line-through' : 'text-on-surface-variant'
+                            }`}>
+                              <span className="font-semibold">{item.row}: </span>{item.formula}
+                            </span>
+                            {someDone && (
+                              <span className="font-label-sm text-label-sm text-primary/70">
+                                {completedSubs.length}/{subRows.length} hàng
+                              </span>
+                            )}
+                          </div>
+                          {/* Nút xổ */}
+                          <button
+                            onClick={() => toggleExpandRange(item.id)}
+                            className="ml-auto flex-shrink-0 p-1 rounded-full hover:bg-surface-variant/40 text-on-surface-variant transition-all"
+                            title={isExpanded ? 'Thu gọn' : 'Xổ ra chọn từng hàng'}
+                          >
+                            <span className={`material-symbols-outlined text-[18px] transition-transform duration-200 ${ isExpanded ? 'rotate-180' : ''}`}>expand_more</span>
+                          </button>
+                        </div>
+
+                        {/* Sub-rows */}
+                        {isExpanded && (
+                          <div className="ml-9 mt-2 space-y-1 border-l-2 border-outline-variant/30 pl-3">
+                            {subRows.map(sr => {
+                              const srDone = (progress[activeProject.id] || []).includes(sr.id);
+                              return (
+                                <div
+                                  key={sr.id}
+                                  onClick={() => toggleRow(activeProject.id, sr.id)}
+                                  className="flex items-center gap-3 cursor-pointer group py-0.5"
+                                >
+                                  <span
+                                    className={`material-symbols-outlined flex-shrink-0 text-[16px] transition-colors ${
+                                      srDone ? 'text-primary' : 'text-outline-variant'
+                                    }`}
+                                    style={srDone ? { fontVariationSettings: "'FILL' 1" } : {}}
+                                  >
+                                    {srDone ? 'check_circle' : 'radio_button_unchecked'}
+                                  </span>
+                                  <span className={`font-label-md text-label-md transition-colors ${
+                                    srDone ? 'text-outline-variant line-through' : 'text-on-surface-variant group-hover:text-primary'
+                                  }`}>
+                                    {sr.label}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  // Hàng thường (không phải range)
                   return (
                     <div key={item.id} onClick={() => toggleRow(activeProject.id, item.id)} className="flex items-start gap-4 group cursor-pointer py-1">
                       <span 
