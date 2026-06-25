@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { projects } from './data/projects';
 import { glossary } from './data/glossary';
+import { AddProjectModal } from './components/AddProjectModal';
 import './index.css';
 
 function App() {
@@ -12,6 +13,48 @@ function App() {
     const saved = localStorage.getItem('crochet_activeProjectId');
     return saved || null;
   });
+
+  // User-created projects
+  const [userProjects, setUserProjects] = useState(() => {
+    const saved = localStorage.getItem('crochet_user_projects');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('crochet_user_projects', JSON.stringify(userProjects));
+  }, [userProjects]);
+
+  const allProjects = useMemo(() => [...projects, ...userProjects], [userProjects]);
+
+  // Modal state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+
+  const handleSaveProject = (projectData) => {
+    setUserProjects(prev => {
+      const exists = prev.findIndex(p => p.id === projectData.id);
+      if (exists >= 0) {
+        const updated = [...prev];
+        updated[exists] = projectData;
+        return updated;
+      }
+      return [...prev, projectData];
+    });
+    setShowAddModal(false);
+    setEditingProject(null);
+  };
+
+  const handleDeleteProject = (projectId) => {
+    if (!window.confirm('Xoá mẫu này? Tiến độ cũng sẽ bị xoá.')) return;
+    setUserProjects(prev => prev.filter(p => p.id !== projectId));
+    setProgress(prev => { const n = { ...prev }; delete n[projectId]; return n; });
+  };
+
+  const openEditModal = (e, project) => {
+    e.stopPropagation();
+    setEditingProject(project);
+    setShowAddModal(true);
+  };
 
   useEffect(() => {
     localStorage.setItem('crochet_currentView', currentView);
@@ -58,8 +101,8 @@ function App() {
 
   // Handle active project
   const activeProject = useMemo(() => {
-    return projects.find(p => p.id === activeProjectId) || null;
-  }, [activeProjectId]);
+    return allProjects.find(p => p.id === activeProjectId) || null;
+  }, [activeProjectId, allProjects]);
 
   const toggleRow = (projectId, rowId) => {
     setProgress(prev => {
@@ -141,29 +184,60 @@ function App() {
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
-        {projects.map(project => {
+        {allProjects.map(project => {
           const completedCount = (progress[project.id] || []).length;
           const totalCount = project.data.length;
           const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+          const isUser = !!project.isUserCreated;
 
           return (
-            <div 
-              key={project.id} 
-              className="pattern-card rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden cursor-pointer"
+            <div
+              key={project.id}
+              className="pattern-card rounded-xl border border-outline-variant/30 flex flex-col overflow-hidden cursor-pointer relative group/card"
               onClick={() => { setActiveProjectId(project.id); setCurrentView('pattern'); }}
             >
+              {/* Ảnh bìa */}
               <div className="h-48 w-full bg-surface-variant overflow-hidden">
-                <img src={project.image} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                {project.image
+                  ? <img src={project.image} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                  : <div className="w-full h-full flex items-center justify-center">
+                      <span className="material-symbols-outlined text-on-surface-variant/30 text-[64px]" style={{ fontVariationSettings: "'FILL' 1" }}>{project.icon}</span>
+                    </div>
+                }
               </div>
+
+              {/* Nút sửa/xóa chỉ hiện với dự án tự tạo */}
+              {isUser && (
+                <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
+                  <button
+                    onClick={(e) => openEditModal(e, project)}
+                    className="p-1.5 rounded-full bg-surface/80 backdrop-blur-sm text-on-surface-variant hover:text-primary hover:bg-surface transition-colors shadow-sm"
+                    title="Chỉnh sửa"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteProject(project.id); }}
+                    className="p-1.5 rounded-full bg-surface/80 backdrop-blur-sm text-on-surface-variant hover:text-error hover:bg-surface transition-colors shadow-sm"
+                    title="Xoá"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                  </button>
+                </div>
+              )}
+
               <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-center gap-3 mb-2">
                   <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {project.icon}
                   </span>
                   <h3 className="font-headline-sm text-headline-sm text-on-surface">{project.title}</h3>
+                  {isUser && (
+                    <span className="ml-auto text-[10px] font-label-sm px-2 py-0.5 rounded-full bg-primary/10 text-primary">Tự tạo</span>
+                  )}
                 </div>
                 <p className="font-body-md text-body-md text-on-surface-variant mb-6 line-clamp-2">
-                  {project.description}
+                  {project.description || 'Mẫu tự tạo'}
                 </p>
                 <div className="mt-auto">
                   <div className="flex justify-between items-center mb-2">
@@ -178,6 +252,20 @@ function App() {
             </div>
           );
         })}
+
+        {/* Card Thêm mới */}
+        <button
+          onClick={() => { setEditingProject(null); setShowAddModal(true); }}
+          className="pattern-card rounded-xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3 min-h-[280px] cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
+        >
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+            <span className="material-symbols-outlined text-primary text-[28px]">add</span>
+          </div>
+          <div className="text-center">
+            <p className="font-headline-sm text-headline-sm text-primary">Thêm mẫu mới</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant/60 mt-1">Tự tạo chart của bạn</p>
+          </div>
+        </button>
       </div>
     </div>
   );
@@ -411,6 +499,15 @@ function App() {
 
   return (
     <>
+      {/* Modal thêm/sửa project */}
+      {showAddModal && (
+        <AddProjectModal
+          editingProject={editingProject}
+          onClose={() => { setShowAddModal(false); setEditingProject(null); }}
+          onSave={handleSaveProject}
+        />
+      )}
+
       {/* Top Navigation Bar */}
       <nav className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md flex justify-between items-center w-full px-container-margin-mobile md:px-container-margin-desktop py-4 border-b border-surface-variant/50">
         <div className="flex flex-col">
