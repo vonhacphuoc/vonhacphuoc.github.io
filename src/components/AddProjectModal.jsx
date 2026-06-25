@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 
 const ICON_OPTIONS = [
   { value: 'pets', label: 'Thú cưng' },
@@ -43,9 +43,32 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
   );
   const [errors, setErrors] = useState({});
 
-  const addRow = () => {
-    setRows(prev => [...prev, { _key: Date.now(), part: '', row: '', formula: '' }]);
-  };
+  const rowInputRefs = useRef({});
+
+  const getNextRow = useCallback((prevRows) => {
+    // Tìm số R lớn nhất trong danh sách hiện tại
+    let maxR = 0;
+    prevRows.forEach(r => {
+      const match = String(r.row).match(/^R(\d+)$/i);
+      if (match) maxR = Math.max(maxR, parseInt(match[1], 10));
+    });
+    return `R${maxR + 1}`;
+  }, []);
+
+  const addRow = useCallback((focusAfter = false) => {
+    const key = Date.now();
+    setRows(prev => {
+      const nextRow = getNextRow(prev);
+      return [...prev, { _key: key, part: '', row: nextRow, formula: '' }];
+    });
+    if (focusAfter) {
+      // Focus ô "Phần" của hàng mới sau khi render
+      setTimeout(() => {
+        const el = rowInputRefs.current[key];
+        if (el) el.focus();
+      }, 30);
+    }
+  }, [getNextRow]);
 
   const removeRow = (key) => {
     setRows(prev => prev.filter(r => r._key !== key));
@@ -204,6 +227,7 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
                     <div className="flex gap-2">
                       <input
                         type="text"
+                        ref={el => { if (el) rowInputRefs.current[`m_${row._key}`] = el; }}
                         value={row.part}
                         onChange={e => updateRow(row._key, 'part', e.target.value)}
                         placeholder={idx === 0 ? 'Phần (VD: Thân)' : 'Phần'}
@@ -223,6 +247,12 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
                         value={row.formula}
                         onChange={e => updateRow(row._key, 'formula', e.target.value)}
                         placeholder="Công thức (VD: MR(6X))"
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addRow(true);
+                          }
+                        }}
                         className="flex-1 min-w-0 px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
                       />
                       <button
@@ -239,6 +269,7 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
                   <div className="hidden md:grid gap-2 items-center" style={{ gridTemplateColumns: '1fr 80px 1fr 32px' }}>
                     <input
                       type="text"
+                      ref={el => { if (el) rowInputRefs.current[row._key] = el; }}
                       value={row.part}
                       onChange={e => updateRow(row._key, 'part', e.target.value)}
                       placeholder={idx === 0 ? 'VD: Thân' : ''}
@@ -256,6 +287,12 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
                       value={row.formula}
                       onChange={e => updateRow(row._key, 'formula', e.target.value)}
                       placeholder="VD: MR(6X)"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addRow(true);
+                        }
+                      }}
                       className="px-3 py-2 rounded-lg border border-outline-variant/40 font-body-md text-body-md text-on-surface bg-surface-container-lowest outline-none focus:border-primary text-sm"
                     />
                     <button
@@ -272,7 +309,7 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
 
             {/* Nút thêm hàng */}
             <button
-              onClick={addRow}
+              onClick={() => addRow(true)}
               className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors font-label-md text-label-md w-full justify-center"
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
