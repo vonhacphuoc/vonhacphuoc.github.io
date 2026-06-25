@@ -1,7 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { projects } from './data/projects';
 import { glossary } from './data/glossary';
 import { AddProjectModal } from './components/AddProjectModal';
+import {
+  fetchUserProjects, upsertUserProject, deleteUserProject,
+  fetchProgress, upsertProgress, deleteProgress
+} from './lib/db';
 import './index.css';
 
 function App() {
@@ -14,15 +18,9 @@ function App() {
     return saved || null;
   });
 
-  // User-created projects
-  const [userProjects, setUserProjects] = useState(() => {
-    const saved = localStorage.getItem('crochet_user_projects');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('crochet_user_projects', JSON.stringify(userProjects));
-  }, [userProjects]);
+  // User-created projects — load từ Supabase
+  const [userProjects, setUserProjects] = useState([]);
+  const [dbLoading, setDbLoading] = useState(true);
 
   const allProjects = useMemo(() => [...projects, ...userProjects], [userProjects]);
 
@@ -30,7 +28,23 @@ function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
-  const handleSaveProject = (projectData) => {
+  // Tải dữ liệu từ Supabase khi app khởi động
+  useEffect(() => {
+    async function loadFromDB() {
+      setDbLoading(true);
+      const [dbProjects, dbProgress] = await Promise.all([
+        fetchUserProjects(),
+        fetchProgress(),
+      ]);
+      setUserProjects(dbProjects);
+      setProgress(dbProgress);
+      setDbLoading(false);
+    }
+    loadFromDB();
+  }, []);
+
+  const handleSaveProject = async (projectData) => {
+    await upsertUserProject(projectData);
     setUserProjects(prev => {
       const exists = prev.findIndex(p => p.id === projectData.id);
       if (exists >= 0) {
@@ -44,8 +58,9 @@ function App() {
     setEditingProject(null);
   };
 
-  const handleDeleteProject = (projectId) => {
+  const handleDeleteProject = async (projectId) => {
     if (!window.confirm('Xoá mẫu này? Tiến độ cũng sẽ bị xoá.')) return;
+    await Promise.all([deleteUserProject(projectId), deleteProgress(projectId)]);
     setUserProjects(prev => prev.filter(p => p.id !== projectId));
     setProgress(prev => { const n = { ...prev }; delete n[projectId]; return n; });
   };
@@ -89,31 +104,26 @@ function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
   
-  // State for storing progress of ALL projects. Key: projectId, Value: array of completed item IDs
-  const [progress, setProgress] = useState(() => {
-    const saved = localStorage.getItem('crochet_progress');
-    return saved ? JSON.parse(saved) : {};
-  });
-
-  useEffect(() => {
-    localStorage.setItem('crochet_progress', JSON.stringify(progress));
-  }, [progress]);
+  // Progress state — khởi tạo rỗng, sẽ được fill bởi Supabase fetch
+  const [progress, setProgress] = useState({});
 
   // Handle active project
   const activeProject = useMemo(() => {
     return allProjects.find(p => p.id === activeProjectId) || null;
   }, [activeProjectId, allProjects]);
 
-  const toggleRow = (projectId, rowId) => {
+  const toggleRow = useCallback((projectId, rowId) => {
     setProgress(prev => {
       const projectProgress = prev[projectId] || [];
-      if (projectProgress.includes(rowId)) {
-        return { ...prev, [projectId]: projectProgress.filter(id => id !== rowId) };
-      } else {
-        return { ...prev, [projectId]: [...projectProgress, rowId] };
-      }
+      const newIds = projectProgress.includes(rowId)
+        ? projectProgress.filter(id => id !== rowId)
+        : [...projectProgress, rowId];
+      const updated = { ...prev, [projectId]: newIds };
+      // Sync Supabase (fire-and-forget)
+      upsertProgress(projectId, updated[projectId]);
+      return updated;
     });
-  };
+  }, []);
 
   // State lưu trạng thái mở/đóng của các hàng range (R8-R14)
   const [expandedRanges, setExpandedRanges] = useState({});
@@ -499,6 +509,16 @@ function App() {
 
   return (
     <>
+      {/* Loading overlay khi fetch Supabase */}
+      {dbLoading && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'var(--color-surface)' }}>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+            <p className="font-label-md text-label-md text-on-surface-variant">Đang tải dữ liệu...</p>
+          </div>
+        </div>
+      )}
+
       {/* Modal thêm/sửa project */}
       {showAddModal && (
         <AddProjectModal
