@@ -46,11 +46,16 @@ export function AddProjectModal({ onClose, onSave, editingProject }) {
   const rowInputRefs = useRef({});
 
   const getNextRow = useCallback((prevRows) => {
-    // Tìm số R lớn nhất trong danh sách hiện tại
+    if (prevRows.length === 0) return 'R1';
+    // Lấy phần của hàng cuối cùng
+    const lastPart = prevRows[prevRows.length - 1].part ?? '';
+    // Chỉ đếm R trong các hàng cùng phần
     let maxR = 0;
     prevRows.forEach(r => {
-      const match = String(r.row).match(/^R(\d+)$/i);
-      if (match) maxR = Math.max(maxR, parseInt(match[1], 10));
+      if ((r.part ?? '') === lastPart) {
+        const match = String(r.row).match(/^R(\d+)$/i);
+        if (match) maxR = Math.max(maxR, parseInt(match[1], 10));
+      }
     });
     return `R${maxR + 1}`;
   }, []);

@@ -14,3 +14,22 @@ export function getDeviceId() {
   }
   return id;
 }
+
+/**
+ * Lấy role của user từ bảng public.profiles.
+ * Trả về: 'editor' | 'viewer' | null
+ */
+export async function fetchUserRole(userId) {
+  if (!userId) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  if (error) { console.warn('fetchUserRole:', error.message); return 'viewer'; }
+  const role = data?.role;
+  if (role === 'admin') return 'admin';
+  if (role === 'editor') return 'editor';
+  return 'viewer';
+}
+

@@ -40,9 +40,9 @@ export function AuthModal({ onClose }) {
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-variant/50">
           <div className="flex items-center gap-2.5">
             <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-              admin_panel_settings
+              login
             </span>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">Đăng nhập Admin</h2>
+            <h2 className="font-headline-sm text-headline-sm text-on-surface">Đăng nhập</h2>
           </div>
           <button
             onClick={onClose}
@@ -55,7 +55,9 @@ export function AuthModal({ onClose }) {
         {/* Form Body */}
         <form onSubmit={handleLogin} className="p-6 space-y-5">
           <p className="font-body-md text-body-md text-on-surface-variant">
-            Vui lòng đăng nhập bằng tài khoản admin để mở khoá tính năng tạo, chỉnh sửa và xoá chart móc len.
+            Đăng nhập để sử dụng app. Tuỳ theo role được cấp, bạn sẽ có quyền
+            <span className="text-primary font-semibold"> Editor</span> (tạo/sửa/xóa chart) hoặc
+            <span className="text-on-surface-variant font-semibold"> Viewer</span> (chỉ xem).
           </p>
 
           {errorMsg && (

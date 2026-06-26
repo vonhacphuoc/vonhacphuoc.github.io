@@ -3,7 +3,7 @@ import { projects } from './data/projects';
 import { glossary } from './data/glossary';
 import { AddProjectModal } from './components/AddProjectModal';
 import { AuthModal } from './components/AuthModal';
-import { supabase } from './lib/supabase';
+import { supabase, fetchUserRole } from './lib/supabase';
 import {
   fetchUserProjects, upsertUserProject, deleteUserProject,
   fetchProgress, upsertProgress, deleteProgress
@@ -20,9 +20,20 @@ function App() {
     return saved || null;
   });
 
-  // Admin Auth State
+  // Auth & Role State
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // 'editor' | 'viewer' | null — lấy từ bảng public.profiles
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchUserRole(user.id).then(setUserRole);
+    } else {
+      setUserRole(null);
+    }
+  }, [user]);
 
   // User-created projects — load từ Supabase
   const [userProjects, setUserProjects] = useState([]);
@@ -240,8 +251,8 @@ function App() {
                 }
               </div>
 
-              {/* Nút sửa/xóa chỉ hiện với dự án tự tạo khi đã đăng nhập admin */}
-              {isUser && user && (
+              {/* Nút sửa/xóa chỉ hiện với Editor hoặc Admin */}
+              {isUser && (userRole === 'admin' || userRole === 'editor') && (
                 <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={(e) => openEditModal(e, project)}
@@ -287,8 +298,8 @@ function App() {
           );
         })}
 
-        {/* Card Thêm mới - Chỉ hiện khi đã đăng nhập */}
-        {user && (
+        {/* Card Thêm mới - Chỉ hiện với Editor hoặc Admin */}
+        {(userRole === 'admin' || userRole === 'editor') && (
           <button
             onClick={() => { setEditingProject(null); setShowAddModal(true); }}
             className="pattern-card rounded-xl border-2 border-dashed border-primary/30 flex flex-col items-center justify-center gap-3 min-h-[280px] cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all duration-200 group"
@@ -315,19 +326,30 @@ function App() {
     return (
       <div className="max-w-7xl mx-auto px-container-margin-mobile md:px-container-margin-desktop mt-8 mb-24">
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors text-on-surface-variant" onClick={() => setCurrentView('projects')}>
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                <span className="font-label-md text-label-md">Quay lại</span>
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 mb-8">
+            <div className="flex flex-col sm:flex-row gap-6 items-start w-full lg:max-w-3xl">
+              {activeProject.image && (
+                <div className="w-full sm:w-48 h-48 rounded-xl overflow-hidden bg-surface-variant flex-shrink-0 border border-outline-variant/30 shadow-md">
+                  <img 
+                    src={activeProject.image} 
+                    alt={activeProject.title} 
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                  />
+                </div>
+              )}
+              <div className="flex-grow">
+                <div className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors text-on-surface-variant" onClick={() => setCurrentView('projects')}>
+                  <span className="material-symbols-outlined text-sm">arrow_back</span>
+                  <span className="font-label-md text-label-md">Quay lại</span>
+                </div>
+                <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">{activeProject.title}</h1>
+                <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
+                  {activeProject.description}
+                </p>
               </div>
-              <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">{activeProject.title}</h1>
-              <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
-                {activeProject.description}
-              </p>
             </div>
             
-            <div className="bg-surface-container-low p-6 rounded-xl flex-shrink-0 w-full md:w-80 relative">
+            <div className="bg-surface-container-low p-6 rounded-xl flex-shrink-0 w-full lg:w-80 relative">
               <button 
                 onClick={() => resetAll(activeProject.id)} 
                 className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-variant/50 text-on-surface-variant transition-colors"
@@ -570,18 +592,33 @@ function App() {
           </span>
         </div>
         <div className="flex gap-2 items-center">
-          {/* Nút đăng nhập/đăng xuất */}
+          {/* Nút đăng nhập/đăng xuất + badge role */}
           {user ? (
-            <div className="flex items-center gap-3">
-              <span className="hidden md:inline font-label-md text-label-md text-on-surface-variant bg-surface-variant/30 px-3 py-1.5 rounded-full border border-outline-variant/30 max-w-[180px] truncate">
+            <div className="flex items-center gap-2">
+              {/* Badge role */}
+              <span
+                className={`hidden md:inline font-label-sm text-label-sm px-2.5 py-1 rounded-full border ${
+                  userRole === 'admin'
+                    ? 'bg-error/10 text-error border-error/30'
+                    : userRole === 'editor'
+                    ? 'bg-primary/10 text-primary border-primary/30'
+                    : 'bg-surface-variant/40 text-on-surface-variant border-outline-variant/30'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[13px] align-middle mr-1" style={{ fontVariationSettings: (userRole === 'admin' || userRole === 'editor') ? "'FILL' 1" : '' }}>
+                  {userRole === 'admin' ? 'shield' : userRole === 'editor' ? 'edit' : 'visibility'}
+                </span>
+                {userRole === 'admin' ? 'Admin' : userRole === 'editor' ? 'Editor' : 'Viewer'}
+              </span>
+              <span className="hidden md:inline font-label-md text-label-md text-on-surface-variant bg-surface-variant/30 px-3 py-1.5 rounded-full border border-outline-variant/30 max-w-[160px] truncate">
                 {user.email}
               </span>
-              <button 
+              <button
                 onClick={async () => {
                   if (window.confirm('Bạn muốn đăng xuất?')) {
                     await supabase.auth.signOut();
                   }
-                }} 
+                }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-error/10 hover:bg-error/20 text-error transition-all font-label-md text-label-md cursor-pointer active:scale-95 duration-150"
                 title="Đăng xuất"
               >
@@ -590,12 +627,12 @@ function App() {
               </button>
             </div>
           ) : (
-            <button 
-              onClick={() => setShowAuthModal(true)} 
+            <button
+              onClick={() => setShowAuthModal(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary transition-all font-label-md text-label-md cursor-pointer active:scale-95 duration-150"
-              title="Đăng nhập Admin"
+              title="Đăng nhập"
             >
-              <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+              <span className="material-symbols-outlined text-[18px]">login</span>
               <span>Đăng nhập</span>
             </button>
           )}
@@ -614,8 +651,8 @@ function App() {
         {currentView === 'library' && renderLibraryView()}
       </main>
 
-      {/* Nút FAB thêm mẫu mới cố định ở góc dưới bên phải - Chỉ hiện khi đã đăng nhập */}
-      {user && currentView === 'projects' && (
+      {/* Nút FAB thêm mẫu mới - Chỉ hiện với Editor hoặc Admin */}
+      {(userRole === 'admin' || userRole === 'editor') && currentView === 'projects' && (
         <button
           onClick={() => { setEditingProject(null); setShowAddModal(true); }}
           className="fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-primary text-on-primary shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-150 cursor-pointer"
