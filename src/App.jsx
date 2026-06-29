@@ -338,7 +338,7 @@ function App() {
                 </div>
               )}
               <div className="flex-grow">
-                <div className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors text-on-surface-variant" onClick={() => setCurrentView('projects')}>
+                <div className="flex items-center gap-2 mb-2 cursor-pointer hover:text-primary transition-colors text-on-surface-variant print:hidden" onClick={() => setCurrentView('projects')}>
                   <span className="material-symbols-outlined text-sm">arrow_back</span>
                   <span className="font-label-md text-label-md">Quay lại</span>
                 </div>
@@ -346,6 +346,30 @@ function App() {
                 <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
                   {activeProject.description}
                 </p>
+                <div className="flex flex-wrap gap-2 mt-4 print:hidden">
+                  <button
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-label-md text-label-md hover:bg-primary/95 transition-all shadow-sm active:scale-95 duration-150 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] print-icon">picture_as_pdf</span>
+                    <span>Xuất PDF (In)</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const { exportToDocx } = await import('./lib/exportDocx');
+                        await exportToDocx(activeProject, glossary);
+                      } catch (err) {
+                        console.error('Lỗi khi xuất Word:', err);
+                        alert('Có lỗi xảy ra khi xuất file Word.');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-variant text-on-surface-variant border border-outline-variant/30 font-label-md text-label-md hover:bg-surface-variant/80 transition-all shadow-sm active:scale-95 duration-150 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[18px] print-icon">description</span>
+                    <span>Xuất Word (.docx)</span>
+                  </button>
+                </div>
               </div>
             </div>
             
