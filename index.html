@@ -193,6 +193,23 @@
         transition: all 0.2s;
       }
       .btn-reject:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+      #cookie-settings-button {
+        display: none;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 99998;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 999px;
+        background: rgba(20, 20, 30, 0.92);
+        color: #ddd;
+        padding: 8px 14px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      }
+      #cookie-settings-button:hover { color: #fff; }
     </style>
   </head>
   <body class="min-h-screen pb-32">
@@ -205,7 +222,7 @@
     <script type="module" src="/src/main.jsx"></script>
 
     <!-- Cookie Consent Banner -->
-    <div id="cookie-banner" role="dialog" aria-label="Cookie consent">
+    <div id="cookie-banner" role="dialog" aria-label="Cài đặt cookie" aria-live="polite">
       <div class="cookie-inner">
         <p class="cookie-text">
           🍪 <strong>Chart Móc Len</strong> dùng cookie để phân tích lưu lượng và hiển thị quảng cáo phù hợp.
@@ -218,41 +235,76 @@
       </div>
     </div>
 
+    <button id="cookie-settings-button" type="button" onclick="showConsentSettings()" aria-label="Mở cài đặt cookie">
+      Cài đặt cookie
+    </button>
+
     <!-- Consent Logic -->
     <script>
-      function acceptAllConsent() {
+      function saveConsentChoice(choice) {
+        try {
+          localStorage.setItem('consent_choice', choice);
+        } catch (error) {
+          // Consent still applies to the current page if storage is unavailable.
+        }
+      }
+
+      function updateConsent(choice) {
         gtag('consent', 'update', {
-          'ad_user_data': 'granted',
-          'ad_personalization': 'granted',
-          'ad_storage': 'granted',
-          'analytics_storage': 'granted'
+          'ad_user_data': choice,
+          'ad_personalization': choice,
+          'ad_storage': choice,
+          'analytics_storage': choice
         });
-        localStorage.setItem('consent_choice', 'granted');
+        window.dataLayer.push({
+          'event': 'consent_updated',
+          'consent_status': choice
+        });
+        saveConsentChoice(choice);
         hideBanner();
+      }
+
+      function acceptAllConsent() {
+        updateConsent('granted');
       }
 
       function rejectAllConsent() {
-        gtag('consent', 'update', {
-          'ad_user_data': 'denied',
-          'ad_personalization': 'denied',
-          'ad_storage': 'denied',
-          'analytics_storage': 'denied'
-        });
-        localStorage.setItem('consent_choice', 'denied');
-        hideBanner();
+        updateConsent('denied');
+      }
+
+      function showConsentSettings() {
+        var banner = document.getElementById('cookie-banner');
+        var settingsButton = document.getElementById('cookie-settings-button');
+        if (banner) {
+          banner.style.display = '';
+          banner.style.animation = 'slideUp 0.4s ease';
+          banner.classList.add('show');
+        }
+        if (settingsButton) settingsButton.style.display = 'none';
       }
 
       function hideBanner() {
-        var b = document.getElementById('cookie-banner');
-        if (b) { b.style.animation = 'none'; b.style.display = 'none'; }
+        var banner = document.getElementById('cookie-banner');
+        var settingsButton = document.getElementById('cookie-settings-button');
+        if (banner) {
+          banner.classList.remove('show');
+          banner.style.animation = 'none';
+          banner.style.display = 'none';
+        }
+        if (settingsButton) settingsButton.style.display = 'block';
       }
 
-      // Chỉ hiện banner nếu chưa chọn
+      // Show the banner until a choice is made; otherwise expose settings.
       (function() {
-        if (!localStorage.getItem('consent_choice')) {
-          var b = document.getElementById('cookie-banner');
-          if (b) b.classList.add('show');
+        var saved = null;
+        try {
+          saved = localStorage.getItem('consent_choice');
+        } catch (error) {
+          saved = null;
         }
+
+        if (saved === 'granted' || saved === 'denied') hideBanner();
+        else showConsentSettings();
       })();
     </script>
   </body>
