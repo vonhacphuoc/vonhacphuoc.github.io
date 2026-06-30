@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vonhacphuoc.github.io/sitemap.xml
