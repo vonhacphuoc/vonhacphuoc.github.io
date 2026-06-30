@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { projects } from './data/projects';
 import { glossary } from './data/glossary';
 import { AddProjectModal } from './components/AddProjectModal';
@@ -9,6 +9,34 @@ import {
   fetchProgress, upsertProgress, deleteProgress
 } from './lib/db';
 import './index.css';
+
+function AdSenseUnit() {
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (error) {
+      console.warn('Không thể khởi tạo quảng cáo AdSense:', error);
+    }
+  }, []);
+
+  return (
+    <div className="mb-8 min-h-[90px]" aria-label="Quảng cáo">
+      <ins
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-7327470571792452"
+        data-ad-slot="9417724974"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+}
 
 function App() {
   const [currentView, setCurrentView] = useState(() => {
@@ -228,6 +256,7 @@ function App() {
           Chọn một mẫu móc len để bắt đầu theo dõi tiến độ của bạn.
         </p>
       </div>
+      <AdSenseUnit />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
         {allProjects.map(project => {
           const completedCount = (progress[project.id] || []).length;
@@ -398,6 +427,8 @@ function App() {
             );
           })()}
         </div>
+
+        <AdSenseUnit key={activeProject.id} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-16">
           {groupedData.map(group => (
