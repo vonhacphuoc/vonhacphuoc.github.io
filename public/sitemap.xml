@@ -8,4 +8,11 @@
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="vi" href="https://vonhacphuoc.github.io/"/>
   </url>
+  <url>
+    <loc>https://vonhacphuoc.github.io/privacy-policy.html</loc>
+    <lastmod>2026-06-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://vonhacphuoc.github.io/privacy-policy.html"/>
+  </url>
 </urlset>

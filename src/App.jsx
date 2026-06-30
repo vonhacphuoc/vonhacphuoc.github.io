@@ -682,6 +682,15 @@ function App() {
         {currentView === 'library' && renderLibraryView()}
       </main>
 
+      <footer className="max-w-7xl mx-auto px-container-margin-mobile md:px-container-margin-desktop pb-24 text-center">
+        <a
+          href="/privacy-policy.html"
+          className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+        >
+          Chính sách quyền riêng tư
+        </a>
+      </footer>
+
       {/* Nút FAB thêm mẫu mới - Chỉ hiện với Editor hoặc Admin */}
       {(userRole === 'admin' || userRole === 'editor') && currentView === 'projects' && (
         <button
