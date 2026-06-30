@@ -1,6 +1,44 @@
 <!doctype html>
 <html lang="vi">
   <head>
+    <meta charset="UTF-8" />
+
+    <!-- Google Consent Mode v2: must run before GTM and gtag.js -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){window.dataLayer.push(arguments);}
+
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied',
+        'wait_for_update': 500
+      });
+
+      gtag('set', 'url_passthrough', true);
+      gtag('set', 'ads_data_redaction', true);
+
+      // Restore the visitor's previous choice before loading Google tags.
+      (function() {
+        var saved = null;
+        try {
+          saved = localStorage.getItem('consent_choice');
+        } catch (error) {
+          saved = null;
+        }
+
+        if (saved === 'granted' || saved === 'denied') {
+          gtag('consent', 'update', {
+            'ad_storage': saved,
+            'ad_user_data': saved,
+            'ad_personalization': saved,
+            'analytics_storage': saved
+          });
+        }
+      })();
+    </script>
+
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -11,51 +49,11 @@
 
     <script src="https://capi-automation.s3.us-east-2.amazonaws.com/public/client_js/capiParamBuilder/clientParamBuilder.bundle.js"></script>
 
-    <meta charset="UTF-8" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/png" href="/favicon.png" sizes="512x512" />
     <link rel="apple-touch-icon" href="/favicon.png" />
     <meta name="theme-color" content="#f97316" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- Google Consent Mode v2 - PHẢI đặt trước gtag.js -->
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){window.dataLayer.push(arguments);}
-
-      // Bật url_passthrough & ads_data_redaction khi consent bị từ chối
-      gtag('set', 'url_passthrough', true);
-      gtag('set', 'ads_data_redaction', true);
-
-      // Mặc định từ chối tất cả (theo GDPR)
-      gtag('consent', 'default', {
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'analytics_storage': 'denied',
-        'wait_for_update': 500
-      });
-
-      // Nếu user đã chấp nhận trước đó → khôi phục consent
-      (function() {
-        var saved = localStorage.getItem('consent_choice');
-        if (saved === 'granted') {
-          gtag('consent', 'update', {
-            'ad_storage': 'granted',
-            'ad_user_data': 'granted',
-            'ad_personalization': 'granted',
-            'analytics_storage': 'granted'
-          });
-        } else if (saved === 'denied') {
-          gtag('consent', 'update', {
-            'ad_storage': 'denied',
-            'ad_user_data': 'denied',
-            'ad_personalization': 'denied',
-            'analytics_storage': 'denied'
-          });
-        }
-      })();
-    </script>
 
     <!-- Google Analytics (sau consent defaults) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-YX4RNTXP8H"></script>
