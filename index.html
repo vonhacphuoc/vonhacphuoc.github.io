@@ -5,11 +5,48 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J4SPN71VR5"></script>
+    <!-- Google Consent Mode v2 - PHẢI đặt trước gtag.js -->
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
+      function gtag(){window.dataLayer.push(arguments);}
+
+      // Bật url_passthrough & ads_data_redaction khi consent bị từ chối
+      gtag('set', 'url_passthrough', true);
+      gtag('set', 'ads_data_redaction', true);
+
+      // Mặc định từ chối tất cả (theo GDPR)
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied',
+        'wait_for_update': 500
+      });
+
+      // Nếu user đã chấp nhận trước đó → khôi phục consent
+      (function() {
+        var saved = localStorage.getItem('consent_choice');
+        if (saved === 'granted') {
+          gtag('consent', 'update', {
+            'ad_storage': 'granted',
+            'ad_user_data': 'granted',
+            'ad_personalization': 'granted',
+            'analytics_storage': 'granted'
+          });
+        } else if (saved === 'denied') {
+          gtag('consent', 'update', {
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied',
+            'analytics_storage': 'denied'
+          });
+        }
+      })();
+    </script>
+
+    <!-- Google Analytics (sau consent defaults) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-J4SPN71VR5"></script>
+    <script>
       gtag('js', new Date());
       gtag('config', 'G-J4SPN71VR5');
     </script>
@@ -64,9 +101,123 @@
     <meta name="google-adsense-account" content="ca-pub-7327470571792452">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7327470571792452"
      crossorigin="anonymous"></script>
+
+    <!-- Cookie Consent Banner Styles -->
+    <style>
+      #cookie-banner {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 99999;
+        background: rgba(20, 20, 30, 0.97);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255,255,255,0.08);
+        padding: 16px 24px;
+        font-family: 'Inter', sans-serif;
+        animation: slideUp 0.4s ease;
+      }
+      #cookie-banner.show { display: flex; }
+      @keyframes slideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to   { transform: translateY(0);   opacity: 1; }
+      }
+      .cookie-inner {
+        max-width: 900px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .cookie-text {
+        flex: 1;
+        min-width: 220px;
+        color: #ccc;
+        font-size: 13.5px;
+        line-height: 1.5;
+      }
+      .cookie-text strong { color: #fff; }
+      .cookie-btns { display: flex; gap: 10px; flex-shrink: 0; }
+      .btn-accept {
+        background: linear-gradient(135deg, #a855f7, #ec4899);
+        color: #fff;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+      .btn-accept:hover { opacity: 0.88; }
+      .btn-reject {
+        background: transparent;
+        color: #999;
+        border: 1px solid rgba(255,255,255,0.15);
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-reject:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+    </style>
   </head>
   <body class="min-h-screen pb-32">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-banner" role="dialog" aria-label="Cookie consent">
+      <div class="cookie-inner">
+        <p class="cookie-text">
+          🍪 <strong>Chart Móc Len</strong> dùng cookie để phân tích lưu lượng và hiển thị quảng cáo phù hợp.
+          Bạn có đồng ý không?
+        </p>
+        <div class="cookie-btns">
+          <button id="btn-accept-all" class="btn-accept" onclick="acceptAllConsent()">Chấp nhận tất cả</button>
+          <button id="btn-reject-all" class="btn-reject" onclick="rejectAllConsent()">Từ chối</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Consent Logic -->
+    <script>
+      function acceptAllConsent() {
+        gtag('consent', 'update', {
+          'ad_user_data': 'granted',
+          'ad_personalization': 'granted',
+          'ad_storage': 'granted',
+          'analytics_storage': 'granted'
+        });
+        localStorage.setItem('consent_choice', 'granted');
+        hideBanner();
+      }
+
+      function rejectAllConsent() {
+        gtag('consent', 'update', {
+          'ad_user_data': 'denied',
+          'ad_personalization': 'denied',
+          'ad_storage': 'denied',
+          'analytics_storage': 'denied'
+        });
+        localStorage.setItem('consent_choice', 'denied');
+        hideBanner();
+      }
+
+      function hideBanner() {
+        var b = document.getElementById('cookie-banner');
+        if (b) { b.style.animation = 'none'; b.style.display = 'none'; }
+      }
+
+      // Chỉ hiện banner nếu chưa chọn
+      (function() {
+        if (!localStorage.getItem('consent_choice')) {
+          var b = document.getElementById('cookie-banner');
+          if (b) b.classList.add('show');
+        }
+      })();
+    </script>
   </body>
 </html>
