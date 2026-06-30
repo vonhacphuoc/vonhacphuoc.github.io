@@ -8,12 +8,31 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments);}
 
+      // Regions covered by Google's EU User Consent Policy:
+      // EEA member states, the United Kingdom, and Switzerland.
+      var consentRequiredRegions = [
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'IS', 'LI', 'NO',
+        'GB', 'CH'
+      ];
+
+      // Require an explicit choice in regulated regions.
       gtag('consent', 'default', {
         'ad_storage': 'denied',
         'ad_user_data': 'denied',
         'ad_personalization': 'denied',
         'analytics_storage': 'denied',
-        'wait_for_update': 500
+        'wait_for_update': 500,
+        'region': consentRequiredRegions
+      });
+
+      // Preserve measurement elsewhere unless the visitor opts out.
+      gtag('consent', 'default', {
+        'ad_storage': 'granted',
+        'ad_user_data': 'granted',
+        'ad_personalization': 'granted',
+        'analytics_storage': 'granted'
       });
 
       gtag('set', 'url_passthrough', true);
