@@ -54,12 +54,12 @@ function App() {
 
   // 'editor' | 'viewer' | null — lấy từ bảng public.profiles
   const [userRole, setUserRole] = useState(null);
+  // Progress state — khởi tạo rỗng, sẽ được fill bởi Supabase fetch
+  const [progress, setProgress] = useState({});
 
   useEffect(() => {
     if (user) {
       fetchUserRole(user.id).then(setUserRole);
-    } else {
-      setUserRole(null);
     }
   }, [user]);
 
@@ -81,10 +81,12 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (!session?.user) setUserRole(null);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (!session?.user) setUserRole(null);
     });
 
     return () => subscription.unsubscribe();
@@ -167,9 +169,6 @@ function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
   
-  // Progress state — khởi tạo rỗng, sẽ được fill bởi Supabase fetch
-  const [progress, setProgress] = useState({});
-
   // Handle active project
   const activeProject = useMemo(() => {
     return allProjects.find(p => p.id === activeProjectId) || null;
@@ -198,7 +197,7 @@ function App() {
   // Parse dạng "R8-R14" hoặc "H4-H150" → { prefix, start, end }
   const parseRowRange = (rowStr) => {
     if (!rowStr) return null;
-    const match = rowStr.match(/^([A-Za-z]+)(\d+)[\-–]([A-Za-z]*)?(\d+)$/);
+    const match = rowStr.match(/^([A-Za-z]+)(\d+)[-–]([A-Za-z]*)?(\d+)$/);
     if (!match) return null;
     const prefix = match[1];
     const start = parseInt(match[2]);
@@ -343,6 +342,41 @@ function App() {
           </button>
         )}
       </div>
+
+      <section className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-gutter" aria-labelledby="huong-dan-bat-dau">
+        <article className="lg:col-span-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-6 md:p-8">
+          <h2 id="huong-dan-bat-dau" className="font-headline-lg text-headline-lg text-on-surface mb-4">
+            Bắt đầu móc len từ một chart
+          </h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+            Chart móc len là bản hướng dẫn rút gọn cho biết loại mũi, số mũi và thứ tự thực hiện ở từng hàng. Trước khi bắt đầu, hãy đọc toàn bộ chart một lượt, chuẩn bị đúng cỡ kim và móc một mẫu thử nhỏ để kiểm tra độ chặt tay.
+          </p>
+          <ol className="space-y-3 font-body-md text-body-md text-on-surface-variant list-decimal pl-5">
+            <li><strong className="text-on-surface">Đọc phần nguyên liệu:</strong> chọn sợi, kim móc, mắt thú và bông gòn phù hợp với kích thước mong muốn.</li>
+            <li><strong className="text-on-surface">Nhận diện ký hiệu:</strong> X là mũi đơn, V là tăng mũi, A là giảm mũi và MR là vòng tròn ma thuật.</li>
+            <li><strong className="text-on-surface">Đánh dấu đầu hàng:</strong> dùng ghim đánh dấu để không nhầm vị trí khi móc vòng xoắn ốc.</li>
+            <li><strong className="text-on-surface">Kiểm tra số mũi:</strong> đếm lại sau mỗi hàng; sửa ngay khi phát hiện thừa hoặc thiếu mũi.</li>
+            <li><strong className="text-on-surface">Lưu tiến độ:</strong> chạm vào từng hàng trong mẫu để đánh dấu phần đã hoàn thành.</li>
+          </ol>
+        </article>
+
+        <aside className="rounded-xl border border-outline-variant/30 bg-primary-container/30 p-6 md:p-8">
+          <h2 className="font-headline-sm text-headline-sm text-on-surface mb-3">Mẹo cho người mới</h2>
+          <ul className="space-y-3 font-body-md text-body-md text-on-surface-variant list-disc pl-5">
+            <li>Dùng sợi màu sáng để dễ nhìn chân mũi.</li>
+            <li>Không siết vòng đầu quá chặt.</li>
+            <li>Ghi lại loại sợi và cỡ kim đã dùng.</li>
+            <li>Đọc chú giải trước khi áp dụng ký hiệu.</li>
+          </ul>
+          <button
+            type="button"
+            onClick={() => setCurrentView('library')}
+            className="mt-6 font-label-md text-label-md text-primary hover:underline"
+          >
+            Xem thư viện ký hiệu →
+          </button>
+        </aside>
+      </section>
     </div>
   );
 
@@ -683,12 +717,15 @@ function App() {
       </main>
 
       <footer className="max-w-7xl mx-auto px-container-margin-mobile md:px-container-margin-desktop pb-24 text-center">
-        <a
-          href="/privacy-policy.html"
-          className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
-        >
-          Chính sách quyền riêng tư
-        </a>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mb-3">
+          Nhật ký Móc Len — thư viện chart và công cụ theo dõi tiến độ dành cho người yêu đồ thủ công.
+        </p>
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+          <a href="/about.html" className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Giới thiệu</a>
+          <a href="/contact.html" className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Liên hệ</a>
+          <a href="/terms.html" className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Điều khoản &amp; bản quyền</a>
+          <a href="/privacy-policy.html" className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors">Chính sách quyền riêng tư</a>
+        </div>
       </footer>
 
       {/* Nút FAB thêm mẫu mới - Chỉ hiện với Editor hoặc Admin */}
